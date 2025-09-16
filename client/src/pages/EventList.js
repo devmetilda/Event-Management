@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Calendar, List, Grid } from 'lucide-react';
-import axios from 'axios';
 import EventCard from '../components/events/EventCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import './EventList.css';
+import api from '../axios'; // UPDATED: use axios instance
 
 const EventList = () => {
   const [events, setEvents] = useState([]);
@@ -32,7 +32,7 @@ const EventList = () => {
         params.append('search', filters.search);
       }
 
-      const response = await axios.get(`/api/events?${params.toString()}`);
+      const response = await api.get(`/api/events?${params.toString()}`); // UPDATED
       setEvents(response.data.events || []);
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -221,17 +221,14 @@ const CalendarView = ({ events }) => {
         </div>
 
       <div className="calendar-grid">
-        {/* Day headers */}
         {dayNames.map(day => (
           <div key={day} className="calendar-day-header">{day}</div>
         ))}
 
-        {/* Empty cells for days before month starts */}
         {Array.from({ length: firstDay }, (_, i) => (
           <div key={`empty-${i}`} className="calendar-day empty"></div>
         ))}
 
-        {/* Days of the month */}
         {Array.from({ length: daysInMonth }, (_, i) => {
           const day = i + 1;
           const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
