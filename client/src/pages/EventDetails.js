@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Users, ArrowLeft } from 'lucide-react';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../axios'; // UPDATED: use axios instance
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -20,10 +20,9 @@ const EventDetails = () => {
   const fetchEventDetails = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/events/${id}`);
+      const response = await api.get(`/api/events/${id}`); // UPDATED
       setEvent(response.data);
 
-      // Check if user is registered
       if (user && response.data.registeredParticipants) {
         const registered = response.data.registeredParticipants.some(
           participant => participant.user._id === user.id || participant.user === user.id
@@ -40,10 +39,10 @@ const EventDetails = () => {
 
   const handleRegister = async () => {
     try {
-      await axios.post(`/api/events/${id}/register`);
+      await api.post(`/api/events/${id}/register`); // UPDATED
       toast.success('Successfully registered for event!');
       setIsRegistered(true);
-      fetchEventDetails(); // Refresh event data
+      fetchEventDetails();
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(error.response?.data?.message || 'Failed to register for event');
@@ -52,10 +51,10 @@ const EventDetails = () => {
 
   const handleUnregister = async () => {
     try {
-      await axios.delete(`/api/events/${id}/unregister`);
+      await api.delete(`/api/events/${id}/unregister`); // UPDATED
       toast.success('Successfully unregistered from event!');
       setIsRegistered(false);
-      fetchEventDetails(); // Refresh event data
+      fetchEventDetails();
     } catch (error) {
       console.error('Unregistration error:', error);
       toast.error(error.response?.data?.message || 'Failed to unregister from event');
