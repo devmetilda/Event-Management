@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
@@ -10,31 +10,18 @@ const Login = () => {
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState('');
 
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Redirect if already logged in
-  React.useEffect(() => {
+  useEffect(() => {
     if (isAuthenticated() && user) {
       const defaultPath = user.role === 'admin' ? '/admin/dashboard' : '/dashboard';
-      // Only use 'from' path if it's appropriate for the user role
       const from = location.state?.from?.pathname;
-      let redirectPath = defaultPath;
-
-      if (from) {
-        // If user is admin and trying to access admin routes, allow it
-        if (user.role === 'admin' && from.startsWith('/admin/')) {
-          redirectPath = from;
-        }
-        // If user is student and trying to access student routes, allow it
-        else if (user.role === 'student' && (from === '/dashboard' || from === '/profile')) {
-          redirectPath = from;
-        }
-        // Otherwise use default path
-      }
-
+      let redirectPath = from || defaultPath;
       navigate(redirectPath, { replace: true });
     }
   }, [isAuthenticated, navigate, location, user]);
@@ -45,13 +32,13 @@ const Login = () => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
       }));
     }
+    if (serverError) setServerError('');
   };
 
   const validateForm = () => {
@@ -88,24 +75,15 @@ const Login = () => {
         const userData = result.user || user;
         const defaultPath = userData?.role === 'admin' ? '/admin/dashboard' : '/dashboard';
         const from = location.state?.from?.pathname;
-        let redirectPath = defaultPath;
-
-        if (from) {
-          // If user is admin and trying to access admin routes, allow it
-          if (userData?.role === 'admin' && from.startsWith('/admin/')) {
-            redirectPath = from;
-          }
-          // If user is student and trying to access student routes, allow it
-          else if (userData?.role === 'student' && (from === '/dashboard' || from === '/profile')) {
-            redirectPath = from;
-          }
-          // Otherwise use default path
-        }
+        let redirectPath = from || defaultPath;
 
         navigate(redirectPath, { replace: true });
+      } else {
+        setServerError(result.message || 'Invalid credentials');
       }
     } catch (error) {
       console.error('Login error:', error);
+      setServerError('Server error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -120,6 +98,8 @@ const Login = () => {
           </div>
           
           <form onSubmit={handleSubmit}>
+            {serverError && <div className="error-message">{serverError}</div>}
+            
             <div className="form-group">
               <label htmlFor="email">Email address</label>
               <div className="input-wrapper">
