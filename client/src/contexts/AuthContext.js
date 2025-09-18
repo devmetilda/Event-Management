@@ -1,10 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
 import { toast } from 'react-toastify';
-
-// ✅ Set base URL for all axios requests
-axios.defaults.baseURL = "https://event-management-backend-j2a2.onrender.com";
-
+import api from '../axios'; // use the axios instance with interceptor
 
 const AuthContext = createContext();
 
@@ -16,13 +12,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // true until auth check completes
-
-  // Set up axios default headers if token exists
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  }, []);
+  const [loading, setLoading] = useState(true);
 
   // Check auth on app start
   useEffect(() => {
@@ -30,26 +20,26 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await axios.get('/api/auth/me'); // Make sure your backend route works
+          const response = await api.get('/api/auth/me');
           setUser(response.data.user);
         } catch (error) {
           console.error('Auth check failed:', error);
           localStorage.removeItem('token');
-          delete axios.defaults.headers.common['Authorization'];
         }
       }
-      setLoading(false); // Done checking
+      setLoading(false);
     };
     checkAuth();
   }, []);
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await api.post('/api/auth/login', { email, password });
       const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
+
+      localStorage.setItem('token', token); // save token
+      setUser(user); // update context
+
       toast.success('Login successful!');
       return { success: true, user };
     } catch (error) {
@@ -60,26 +50,24 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
-  try {
-    const response = await axios.post('/api/auth/register', userData);
-    const { token, user } = response.data;
+    try {
+      const response = await api.post('/api/auth/register', userData);
+      const { token, user } = response.data;
 
-    localStorage.setItem('token', token);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setUser(user);
+      localStorage.setItem('token', token);
+      setUser(user);
 
-    toast.success('Registration successful!');
-    return { success: true, user }; // ✅ Return user
-  } catch (error) {
-    const message = error.response?.data?.message || 'Registration failed';
-    toast.error(message);
-    return { success: false, message };
-  }
-};
+      toast.success('Registration successful!');
+      return { success: true, user };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Registration failed';
+      toast.error(message);
+      return { success: false, message };
+    }
+  };
 
   const logout = () => {
     localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization'];
     setUser(null);
     toast.success('Logged out successfully');
   };
@@ -89,20 +77,23 @@ export const AuthProvider = ({ children }) => {
   const isStudent = () => user?.role === 'student';
   const isAuthenticated = () => !!user;
 
-  const value = {
-    user,
-    loading,
-    login,
-    register,
-    logout,
-    updateUser,
-    isAdmin,
-    isStudent,
-    isAuthenticated,
-  };
-
-  // Wait until auth check finishes before rendering children
   if (loading) return <div>Loading...</div>;
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        updateUser,
+        isAdmin,
+        isStudent,
+        isAuthenticated,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
