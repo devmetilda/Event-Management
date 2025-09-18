@@ -2,6 +2,10 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
+// ✅ Set base URL for all axios requests
+axios.defaults.baseURL = "https://event-management-backend-j2a2.onrender.com";
+
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
