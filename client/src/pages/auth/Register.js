@@ -91,9 +91,15 @@ const Register = () => {
         confirmPassword: formData.confirmPassword
       });
       
-      if (result.success) {
-        navigate('/dashboard', { replace: true });
-      }
+      if (result.success && result.user) {
+  // Update user state in context
+  login(result.user.token); // or whatever method sets the token in AuthContext
+  // Optionally fetch full user data if needed
+  await fetchUserData(); // if your context has a method to fetch current user
+  // Then navigate
+  navigate('/dashboard', { replace: true });
+}
+
     } catch (error) {
       console.error('Registration error:', error);
     } finally {
