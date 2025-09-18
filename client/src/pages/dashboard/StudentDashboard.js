@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, BookOpen, Bell, User, LogOut } from 'lucide-react';
 import { toast } from 'react-toastify';
 import './StudentDashboard.css';
-import api from '../../axios'; // axios instance
+import api from '../../axios'; // axios instance with token interceptor
 
 const StudentDashboard = () => {
   const { user, logout } = useAuth();
@@ -21,17 +21,21 @@ const StudentDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Consolidated data fetch after user is loaded
+  // Fetch data after user is loaded
   useEffect(() => {
-    if (!user) return;
+    if (!user) return; // wait until user exists
 
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Registered Events
         if (activeTab === 'events') {
           const eventsRes = await api.get('/api/users/registered-events');
           setRegisteredEvents(eventsRes.data || []);
-        } else if (activeTab === 'notifications' || activeTab === 'overview') {
+        }
+
+        // Notifications
+        if (activeTab === 'notifications' || activeTab === 'overview') {
           const notifRes = await api.get('/api/users/notifications');
           const fetchedNotifications = notifRes.data.notifications || [];
           const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
@@ -129,8 +133,5 @@ const StudentDashboard = () => {
     </div>
   );
 };
-
-// Components for Overview, Registered Events, Notifications, ProfileSettings
-// Can reuse your existing code for these components
 
 export default StudentDashboard;
