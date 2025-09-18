@@ -60,20 +60,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
-    try {
-      const response = await axios.post('/api/auth/register', userData);
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
-      toast.success('Registration successful!');
-      return { success: true };
-    } catch (error) {
-      const message = error.response?.data?.message || 'Registration failed';
-      toast.error(message);
-      return { success: false, message };
-    }
-  };
+  try {
+    const response = await axios.post('/api/auth/register', userData);
+    const { token, user } = response.data;
+
+    localStorage.setItem('token', token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(user);
+
+    toast.success('Registration successful!');
+    return { success: true, user }; // ✅ Return user
+  } catch (error) {
+    const message = error.response?.data?.message || 'Registration failed';
+    toast.error(message);
+    return { success: false, message };
+  }
+};
 
   const logout = () => {
     localStorage.removeItem('token');
