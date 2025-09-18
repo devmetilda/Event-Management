@@ -6,6 +6,12 @@ import { toast } from 'react-toastify';
 import './StudentDashboard.css';
 import api from '../../axios'; // axios instance with token interceptor
 
+// ✅ Make sure to import these child components
+import DashboardOverview from './DashboardOverview';
+import MyRegisteredEvents from './MyRegisteredEvents';
+import Notifications from './Notifications';
+import ProfileSettings from './ProfileSettings';
+
 const StudentDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -23,18 +29,16 @@ const StudentDashboard = () => {
 
   // Fetch data after user is loaded
   useEffect(() => {
-    if (!user) return; // wait until user exists
+    if (!user) return;
 
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Registered Events
         if (activeTab === 'events') {
           const eventsRes = await api.get('/api/users/registered-events');
           setRegisteredEvents(eventsRes.data || []);
         }
 
-        // Notifications
         if (activeTab === 'notifications' || activeTab === 'overview') {
           const notifRes = await api.get('/api/users/notifications');
           const fetchedNotifications = notifRes.data.notifications || [];
@@ -86,6 +90,7 @@ const StudentDashboard = () => {
   };
 
   const renderContent = () => {
+    // ✅ Always render a fallback message if child data is empty
     switch (activeTab) {
       case 'overview':
         return <DashboardOverview registeredEvents={registeredEvents} notifications={notifications} />;
@@ -128,7 +133,9 @@ const StudentDashboard = () => {
           </div>
         </div>
 
-        <div className="main-content">{renderContent()}</div>
+        <div className="main-content">
+          {renderContent() || <h2>Loading dashboard...</h2>}
+        </div>
       </div>
     </div>
   );
