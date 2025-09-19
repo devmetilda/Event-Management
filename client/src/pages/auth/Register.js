@@ -14,10 +14,10 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const [acceptTerms, setAcceptTerms] = useState(false);
 
-  const { register, isAuthenticated } = useAuth();
+  // CORRECTED: Added 'login' from your AuthContext
+  const { register, isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
   React.useEffect(() => {
     if (isAuthenticated()) {
       navigate('/dashboard', { replace: true });
@@ -26,50 +26,35 @@ const Register = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
     } else if (formData.fullName.trim().length < 2) {
       newErrors.fullName = 'Full name must be at least 2 characters';
     }
-
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
-
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-
     if (!acceptTerms) {
       newErrors.terms = 'You must accept the terms and conditions';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -87,21 +72,24 @@ const Register = () => {
       const result = await register({
         fullName: formData.fullName.trim(),
         email: formData.email,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword
+        password: formData.password
       });
       
-      if (result.success && result.user) {
-  // Update user state in context
-  login(result.user.token); // or whatever method sets the token in AuthContext
-  // Optionally fetch full user data if needed
-  await fetchUserData(); // if your context has a method to fetch current user
-  // Then navigate
-  navigate('/dashboard', { replace: true });
-}
+      if (result.success && result.token) {
+        // CORRECTED: Using the 'login' function from your context
+        login(result.token); 
+        
+        // CORRECTED: Removed the 'fetchUserData' call as it's not defined
+        // and the 'login' function should handle setting the user state.
+        
+        navigate('/dashboard', { replace: true });
+      } else {
+        setErrors({ form: result.message || 'Registration failed. Please try again.' });
+      }
 
     } catch (error) {
       console.error('Registration error:', error);
+      setErrors({ form: 'An unexpected error occurred.' });
     } finally {
       setLoading(false);
     }
@@ -117,6 +105,8 @@ const Register = () => {
           </div>
           
           <form onSubmit={handleSubmit}>
+            {errors.form && <span className="error-message form-error">{errors.form}</span>}
+
             <div className="form-group">
               <label htmlFor="fullName">Full Name</label>
               <input
