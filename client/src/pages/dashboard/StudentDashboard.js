@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, BookOpen, Bell, User, LogOut } from 'lucide-react';
-import axios from 'axios';
+
+// CORRECTED: Importing your special axios.js file
+import api from '../../api/axios.js'; 
+
 import { toast } from 'react-toastify';
 import './StudentDashboard.css';
 
@@ -11,7 +14,6 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get tab from URL parameters
   const getInitialTab = () => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
@@ -23,32 +25,33 @@ const StudentDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Function to handle tab changes and update URL
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    // Update URL without page reload
     const newUrl = tab === 'overview' ? '/dashboard' : `/dashboard?tab=${tab}`;
     navigate(newUrl, { replace: true });
   };
 
   useEffect(() => {
-    // Always fetch notifications for badge count
     fetchNotifications();
-
-    if (activeTab === 'events') {
+    if (activeTab === 'events' || activeTab === 'overview') {
       fetchRegisteredEvents();
     }
   }, [activeTab]);
-
-  // Fetch initial data on component mount
+  
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    const params = new URLSearchParams(location.search);
+    const tabFromUrl = params.get('tab') || 'overview';
+    if (tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [location.search]);
+
 
   const fetchRegisteredEvents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/users/registered-events');
+      // CORRECTED: Using 'api' instead of 'axios'
+      const response = await api.get('/users/registered-events');
       setRegisteredEvents(response.data || []);
     } catch (error) {
       console.error('Error fetching registered events:', error);
@@ -61,16 +64,14 @@ const StudentDashboard = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/users/notifications');
+      // CORRECTED: Using 'api' instead of 'axios'
+      const response = await api.get('/users/notifications');
       const fetchedNotifications = response.data.notifications || [];
-
-      // Check localStorage for read notifications
       const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
       const updatedNotifications = fetchedNotifications.map(notif => ({
         ...notif,
         read: readNotifications.includes(notif.id) || notif.read
       }));
-
       setNotifications(updatedNotifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -83,24 +84,6 @@ const StudentDashboard = () => {
   const handleLogout = () => {
     logout();
   };
-
-  // Update tab when URL changes
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tab = params.get('tab');
-    if (tab && tab !== activeTab) {
-      setActiveTab(tab);
-    }
-  }, [location.search, activeTab]);
-
-  // Fetch data when tab changes
-  useEffect(() => {
-    if (activeTab === 'events') {
-      fetchRegisteredEvents();
-    } else if (activeTab === 'notifications') {
-      fetchNotifications();
-    }
-  }, [activeTab]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -182,7 +165,6 @@ const StudentDashboard = () => {
   );
 };
 
-// Dashboard Overview Component
 const DashboardOverview = ({ registeredEvents, notifications }) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -194,7 +176,8 @@ const DashboardOverview = ({ registeredEvents, notifications }) => {
   const fetchAvailableEvents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/events');
+      // CORRECTED: Using 'api' instead of 'axios'
+      const response = await api.get('/events');
       setEvents(response.data.events || []);
     } catch (error) {
       console.error('Failed to fetch available events');
@@ -294,15 +277,12 @@ const DashboardOverview = ({ registeredEvents, notifications }) => {
                           year: 'numeric'
                         })}</span>
                       </div>
-
                       <div className="home-event-time">
                         <span>{event.startTime} - {event.endTime}</span>
                       </div>
-
                       <div className="home-event-location">
                         <span>{event.location}</span>
                       </div>
-
                       <div className="home-event-participants">
                         <span>{event.registeredParticipants?.length || 0} registered</span>
                       </div>
@@ -323,12 +303,10 @@ const DashboardOverview = ({ registeredEvents, notifications }) => {
   );
 };
 
-// My Registered Events Component - Matching Image Design
 const MyRegisteredEvents = ({ events, loading }) => {
   const navigate = useNavigate();
 
   const handleViewDetails = (eventId) => {
-    // Navigate to event details page using React Router
     navigate(`/events/${eventId}`);
   };
 
@@ -343,7 +321,7 @@ const MyRegisteredEvents = ({ events, loading }) => {
     } else if (title.includes('inter') || title.includes('college')) {
       return '/assets/inter-clg.png';
     }
-    return '/assets/Events.png'; // Default fallback
+    return '/assets/Events.png';
   };
 
   return (
@@ -372,7 +350,6 @@ const MyRegisteredEvents = ({ events, loading }) => {
                     }}
                   />
                 </div>
-
                 <div className="event-content">
                   <div className="event-header-row">
                     <h3 className="event-title">{event.title}</h3>
@@ -380,7 +357,6 @@ const MyRegisteredEvents = ({ events, loading }) => {
                       {status}
                     </span>
                   </div>
-
                   <div className="event-datetime">
                     <div className="date-info">
                       <Calendar size={14} />
@@ -390,12 +366,10 @@ const MyRegisteredEvents = ({ events, loading }) => {
                         year: 'numeric'
                       })}</span>
                     </div>
-
                     <div className="time-info">
                       <span>{event.time}</span>
                     </div>
                   </div>
-
                   <button
                     className="details-button"
                     onClick={() => handleViewDetails(event._id || event.id)}
@@ -417,26 +391,23 @@ const MyRegisteredEvents = ({ events, loading }) => {
   );
 };
 
-// Notifications Component with Read Functionality
 const Notifications = ({ notifications, loading, setNotifications }) => {
   const markAsRead = async (notificationId) => {
     try {
-      // Update localStorage
       const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
       if (!readNotifications.includes(notificationId)) {
         readNotifications.push(notificationId);
         localStorage.setItem('readNotifications', JSON.stringify(readNotifications));
       }
 
-      // Update the parent state
       setNotifications(prev =>
         prev.map(notif =>
           notif.id === notificationId ? { ...notif, read: true } : notif
         )
       );
 
-      // Call backend (optional, for logging purposes)
-      await axios.put(`/api/users/notifications/${notificationId}/read`);
+      // CORRECTED: Using 'api' instead of 'axios'
+      await api.put(`/users/notifications/${notificationId}/read`);
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -477,7 +448,6 @@ const Notifications = ({ notifications, loading, setNotifications }) => {
   );
 };
 
-// Profile Settings Component
 const ProfileSettings = ({ user }) => {
   const { updateUser } = useAuth();
   const [formData, setFormData] = useState({
@@ -520,7 +490,8 @@ const ProfileSettings = ({ user }) => {
         ...formData,
         profileImage: profileImage
       };
-      const response = await axios.put('/api/users/profile', profileData);
+      // CORRECTED: Using 'api' instead of 'axios'
+      const response = await api.put('/users/profile', profileData);
       updateUser(response.data.user);
       toast.success('Profile updated successfully!');
     } catch (error) {
@@ -568,7 +539,6 @@ const ProfileSettings = ({ user }) => {
               required
             />
           </div>
-
           <div className="student-form-group">
             <label>Email Address</label>
             <input
@@ -579,7 +549,6 @@ const ProfileSettings = ({ user }) => {
               required
             />
           </div>
-
           <div className="student-form-group">
             <label>Department</label>
             <input
@@ -590,7 +559,6 @@ const ProfileSettings = ({ user }) => {
               placeholder="e.g., Computer Science"
             />
           </div>
-
           <div className="student-form-group">
             <label>Year</label>
             <input
@@ -601,7 +569,6 @@ const ProfileSettings = ({ user }) => {
               placeholder="e.g., 3rd Year"
             />
           </div>
-
           <div className="student-form-group">
             <label>Student ID</label>
             <input
@@ -612,7 +579,6 @@ const ProfileSettings = ({ user }) => {
               placeholder="e.g., 2362180"
             />
           </div>
-
           <div className="student-form-group">
             <label>Phone Number</label>
             <input
@@ -624,7 +590,6 @@ const ProfileSettings = ({ user }) => {
             />
           </div>
         </div>
-
         <button type="submit" className="student-save-btn" disabled={loading}>
           {loading ? 'Saving...' : 'Save Changes'}
         </button>
