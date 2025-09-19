@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, BookOpen, Bell, User, LogOut } from 'lucide-react';
-import api from '../../api/axios.js'; // Adjust the path to your file
+import api from '../../axios.js';// Adjust the path to your file
 import { toast } from 'react-toastify';
 import './StudentDashboard.css';
 
@@ -48,7 +48,7 @@ const StudentDashboard = () => {
   const fetchRegisteredEvents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/users/registered-events');
+      const response = await api.get('/api/users/registered-events');
       setRegisteredEvents(response.data || []);
     } catch (error) {
       console.error('Error fetching registered events:', error);
@@ -61,7 +61,7 @@ const StudentDashboard = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/users/notifications');
+      const response = await api.get('/api/users/notifications');
       const fetchedNotifications = response.data.notifications || [];
 
       // Check localStorage for read notifications
