@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, BookOpen, Bell, User, LogOut } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import * as XLSX from 'xlsx';
 import './StudentDashboard.css';
 
 const StudentDashboard = () => {
